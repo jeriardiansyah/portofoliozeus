@@ -630,3 +630,110 @@ body.hovering .cursor-ring { width: 56px; height: 56px; background: var(--accent
 @media (hover: none) {
   .spotlight { display: none; }
 }
+
+/* ===== HP kecil: kartu dipindah ke bawah orbit supaya tidak menutupi huruf J ===== */
+@media (max-width: 600px) {
+  .orbit { margin-bottom: 10.4rem; }
+  .orb-card {
+    max-width: none;
+    width: calc(50% - 0.35rem);
+    padding: 0.5rem 0.7rem;
+  }
+  .orb-card strong { font-size: 0.8rem; }
+  .orb-card small { font-size: 0.7rem; }
+  .c-top, .c-right { top: calc(100% + 0.9rem); bottom: auto; }
+  .c-top { left: 0; right: auto; }
+  .c-right { right: 0; left: auto; }
+  .c-left { top: calc(100% + 5.4rem); bottom: auto; left: 25%; right: auto; width: 50%; }
+}
+
+/* ===== Tombol ombak kecil di paling bawah ===== */
+.wave-wrap { display: flex; justify-content: center; margin-top: 2.5rem; }
+.wave-btn {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--accent);
+  cursor: pointer;
+  transition: transform 0.3s, background 0.3s, color 0.3s, border-color 0.3s;
+}
+.wave-btn svg { width: 20px; height: 20px; }
+.wave-btn:hover { transform: translateY(-3px); background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.wave-btn:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; }
+.wave-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+.wave-btn.busy svg { animation: bobwave 1s ease-in-out infinite; }
+@keyframes bobwave { 50% { transform: translateY(-3px); } }
+
+/* ===== Ombak layar penuh: naik dari bawah ke atas selama 10 detik ===== */
+.tide {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  overflow: hidden;
+  pointer-events: none;
+  --hat: clamp(80px, 22vw, 150px);
+}
+.tide.run { display: block; }
+
+.tide-sheet {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: calc(100vh + 140px);
+  height: calc(100dvh + 140px);
+  transform: translateY(100%);
+}
+.tide.run .tide-sheet { animation: tide-rise 10s cubic-bezier(0.4, 0.05, 0.6, 0.95) forwards; }
+@keyframes tide-rise {
+  from { transform: translateY(100%); }
+  to { transform: translateY(-100%); }
+}
+
+.crest {
+  position: absolute;
+  top: 0; left: 0;
+  width: 200%;
+  height: 140px;
+}
+.crest-back { top: -14px; fill: color-mix(in srgb, var(--accent) 35%, transparent); animation: drift 5s linear infinite reverse; }
+.crest-front { animation: drift 3.2s linear infinite; }
+.crest-front .fill { fill: color-mix(in srgb, var(--accent) 58%, transparent); }
+.crest-front .foam { fill: none; stroke: #fff; stroke-opacity: 0.85; stroke-width: 3; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+@keyframes drift { to { transform: translateX(-50%); } }
+
+.tide-body {
+  position: absolute;
+  top: 139px; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--accent) 58%, transparent),
+    color-mix(in srgb, var(--accent-2) 38%, transparent));
+}
+
+/* Topi yang terbawa ombak */
+.hat-sail {
+  position: absolute;
+  left: 50%;
+  top: calc(52px - var(--hat) * 0.98);
+  width: var(--hat);
+  margin-left: calc(var(--hat) / -2);
+}
+.tide.run .hat-sail { animation: sail 10s ease-in-out forwards; }
+@keyframes sail {
+  from { transform: translateX(-30vw); }
+  to { transform: translateX(30vw); }
+}
+.hat {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 50% 85%;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.25));
+  animation: hat-bob 1.6s ease-in-out infinite alternate;
+}
+@keyframes hat-bob {
+  from { transform: translateY(2px) rotate(-9deg); }
+  to { transform: translateY(-10px) rotate(8deg); }
+}

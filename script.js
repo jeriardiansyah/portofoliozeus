@@ -145,3 +145,31 @@ document.getElementById("year").textContent = new Date().getFullYear();
     });
   });
 })();
+
+// ===== Ombak: dipicu tombol kecil di bawah, berjalan 10 detik lalu kembali normal =====
+(function wave() {
+  const btn = document.getElementById("waveBtn");
+  const tide = document.getElementById("tide");
+  if (!btn || !tide) return;
+  const sheet = tide.querySelector(".tide-sheet");
+  let timer;
+
+  function finish() {
+    clearTimeout(timer);
+    tide.classList.remove("run");
+    btn.disabled = false;
+    btn.classList.remove("busy");
+  }
+
+  btn.addEventListener("click", () => {
+    if (tide.classList.contains("run")) return;
+    btn.disabled = true;
+    btn.classList.add("busy");
+    tide.classList.add("run");
+    timer = setTimeout(finish, 10400); // cadangan bila animationend tidak terpanggil
+  });
+
+  sheet.addEventListener("animationend", (e) => {
+    if (e.animationName === "tide-rise") finish();
+  });
+})();
