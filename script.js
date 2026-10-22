@@ -8,7 +8,7 @@ let mouseY = window.innerHeight / 2;
 let ringX = mouseX;
 let ringY = mouseY;
 
-window.addEventListener("mousemove", (e) => {
+window.addEventListener("pointermove", (e) => {
   mouseX = e.clientX;
   mouseY = e.clientY;
   document.body.classList.add("mouse-active");
@@ -31,7 +31,7 @@ function animateRing() {
 animateRing();
 
 // Membesar saat mouse di atas elemen yang bisa diklik
-document.querySelectorAll("a, .chips li, .theme-toggle").forEach((el) => {
+document.querySelectorAll("a, .chips li, .theme-toggle, .wave-btn, .hat-drag").forEach((el) => {
   el.addEventListener("mouseenter", () => document.body.classList.add("hovering"));
   el.addEventListener("mouseleave", () => document.body.classList.remove("hovering"));
 });
@@ -146,7 +146,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
   });
 })();
 
-// ===== Ombak: dipicu tombol kecil di bawah, berjalan 10 detik lalu kembali normal =====
+// ===== Ombak: dipicu tombol kecil di bawah, naik pelan, diam 10 detik menutupi layar, lalu surut =====
 (function wave() {
   const btn = document.getElementById("waveBtn");
   const tide = document.getElementById("tide");
@@ -159,6 +159,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
     tide.classList.remove("run");
     btn.disabled = false;
     btn.classList.remove("busy");
+    tide.dispatchEvent(new Event("tideend"));
   }
 
   btn.addEventListener("click", () => {
@@ -166,10 +167,86 @@ document.getElementById("year").textContent = new Date().getFullYear();
     btn.disabled = true;
     btn.classList.add("busy");
     tide.classList.add("run");
-    timer = setTimeout(finish, 10400); // cadangan bila animationend tidak terpanggil
+    timer = setTimeout(finish, 20400); // cadangan bila animationend tidak terpanggil
   });
 
   sheet.addEventListener("animationend", (e) => {
-    if (e.animationName === "tide-rise") finish();
+    if (e.animationName === "tide-cycle") finish();
+  });
+})();
+
+// ===== Topi di ombak: bisa ditarik ke mana saja, saat dilepas kembali ke tempat semula =====
+(function hatDrag() {
+  const hat = document.getElementById("hatDrag");
+  const tide = document.getElementById("tide");
+  if (!hat || !tide) return;
+  const parent = hat.parentElement; // posisi asal topi (ikut ombak)
+
+  let active = false, pid = null, raf = 0, tiltTimer;
+  let grabX = 0, grabY = 0, lastX = 0, lastY = 0, prevX = 0, tilt = 0, w = 0, h = 0;
+
+  // Topi menempel di kursor, bebas ke mana saja; posisi asal terus bergerak mengikuti ombak
+  function place() {
+    const p = parent.getBoundingClientRect();
+    const left = Math.min(Math.max(lastX - grabX, -w * 0.6), document.documentElement.clientWidth - w * 0.4);
+    const top = Math.min(Math.max(lastY - grabY, -h * 0.6), window.innerHeight - h * 0.4);
+    hat.style.translate = (left - p.left) + "px " + (top - p.top) + "px";
+  }
+  function loop() {
+    if (!active) return;
+    place();
+    raf = requestAnimationFrame(loop);
+  }
+
+  hat.addEventListener("pointerdown", (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    const r = hat.getBoundingClientRect();
+    w = r.width; h = r.height;
+    grabX = e.clientX - r.left; grabY = e.clientY - r.top;
+    lastX = prevX = e.clientX; lastY = e.clientY;
+    const cs = getComputedStyle(hat);
+    hat.style.translate = cs.translate === "none" ? "0px 0px" : cs.translate; // bekukan posisi saat ini
+    hat.style.rotate = cs.rotate === "none" ? "0deg" : cs.rotate;
+    tilt = 0; active = true; pid = e.pointerId;
+    hat.classList.add("dragging");
+    try { hat.setPointerCapture(pid); } catch (_) {}
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  });
+
+  hat.addEventListener("pointermove", (e) => {
+    if (!active || e.pointerId !== pid) return;
+    lastX = e.clientX; lastY = e.clientY;
+    // Topi miring mengikuti arah tarikan
+    const dx = e.clientX - prevX; prevX = e.clientX;
+    tilt += (Math.max(-28, Math.min(28, dx * 1.6)) - tilt) * 0.25;
+    hat.style.rotate = tilt + "deg";
+    clearTimeout(tiltTimer);
+    tiltTimer = setTimeout(() => { tilt = 0; hat.style.rotate = "0deg"; }, 90);
+  });
+
+  function release(e) {
+    if (!active || (e && e.pointerId !== undefined && e.pointerId !== pid)) return;
+    active = false;
+    cancelAnimationFrame(raf);
+    clearTimeout(tiltTimer);
+    hat.classList.remove("dragging");
+    hat.style.translate = "0px 0px"; // kembali ke tempat semula (pegas)
+    hat.style.rotate = "0deg";
+    try { hat.releasePointerCapture(pid); } catch (_) {}
+  }
+  hat.addEventListener("pointerup", release);
+  hat.addEventListener("pointercancel", release);
+  hat.addEventListener("lostpointercapture", release);
+  hat.addEventListener("dragstart", (e) => e.preventDefault());
+
+  // Ombak selesai: topi disetel ulang untuk ombak berikutnya
+  tide.addEventListener("tideend", () => {
+    active = false;
+    cancelAnimationFrame(raf);
+    hat.classList.remove("dragging");
+    hat.style.translate = "";
+    hat.style.rotate = "";
   });
 })();
